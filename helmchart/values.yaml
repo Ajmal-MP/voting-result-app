@@ -1,0 +1,24 @@
+vote:
+  app: vote
+  replica: 1
+  image:
+    container_name: vote
+    repo: dockersamples/examplevotingapp_vote
+    tag: latest
+  service:
+    port: 5000
+    targetport: 80
+
+result:
+  app: result
+  replica: 1
+  image:
+    container_name: result
+    repo: dockersamples/examplevotingapp_result
+    tag: latest
+  service:
+    port: 5001
+    targetport: 80
+
+    
+

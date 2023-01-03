@@ -1,0 +1,136 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: vote
+  labels:
+    app: {{ .Values.vote.app }}
+spec:
+  replicas: {{ .Values.vote.replica }}
+  selector:
+    matchLabels:
+      app: {{ .Values.vote.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.vote.app }}
+    spec:
+      containers:
+      - image: "{{ .Values.vote.image.repo }}:{{ .Values.vote.image.tag }}"
+        name: vote
+        ports:
+        - containerPort: {{ .Values.vote.service.targetport }}
+          name: vote
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: result
+  labels:
+    app: {{ .Values.result.app }}
+spec:
+  replicas: {{ .Values.result.replica }}
+  selector:
+    matchLabels:
+      app: {{ .Values.result.app }}
+  template:
+    metadata:
+      labels:
+        app: {{ .Values.result.app }}
+    spec:
+      containers:
+      - image: "{{ .Values.result.image.repo }}:{{ .Values.result.image.tag }}" 
+        name: result
+        ports:
+        - containerPort: {{ .Values.result.service.targetport }}
+          name: result
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: db
+  name: db
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: db
+  template:
+    metadata:
+      labels:
+        app: db
+    spec:
+      containers:
+      - image: postgres:15-alpine
+        name: postgres
+        env:
+        - name: POSTGRES_USER
+          value: postgres
+        - name: POSTGRES_PASSWORD
+          value: postgres
+        ports:
+        - containerPort: 5432
+          name: postgres
+        volumeMounts:
+        - mountPath: /var/lib/postgresql/data
+          name: db-data
+      volumes:
+      - name: db-data
+        emptyDir: {}
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  labels:
+    app: redis
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+      - image: redis:alpine
+        name: redis
+        ports:
+        - containerPort: 6379
+          name: redis
+        volumeMounts:
+        - mountPath: /data
+          name: redis-data
+      volumes:
+      - name: redis-data
+        emptyDir: {} 
+
+---
+
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: worker
+  name: worker
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: worker
+  template:
+    metadata:
+      labels:
+        app: worker
+    spec:
+      containers:
+      - image: dockersamples/examplevotingapp_worker
+        name: worker
