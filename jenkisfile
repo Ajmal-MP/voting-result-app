@@ -1,0 +1,90 @@
+pipeline {
+    agent any
+    
+    environment {
+        build_number = "${env.BUILD_ID}"
+    }
+
+    stages {
+
+
+        stage('getting code from git') {
+            steps {
+                git branch: 'main', url: 'https://github.com/Ajmal-MP/voting-result-app.git'
+            }
+        }
+
+        
+        stage("pushing  result app dockr image") {
+            
+            steps {
+                dir("/var/jenkins_home/workspace/vote-result/result") {
+                    sh "docker build -t ajmaldocker07/result_app:${build_number} ."
+                    withCredentials([usernamePassword(credentialsId: 'docker_id', passwordVariable: 'docker_password', usernameVariable: 'docker_user_name')]) {
+                        sh "docker login -u $docker_user_name  -p $docker_password"
+                        sh "docker push ajmaldocker07/result_app:${build_number}"
+                        sh "docker rmi ajmaldocker07/result_app:${build_number}"
+                    }
+                }
+            }
+            
+        }
+        
+        
+        stage("pushing voting app docker  image") {
+            
+            steps {
+                dir("/var/jenkins_home/workspace/vote-result/vote") {
+                    sh "docker build -t ajmaldocker07/vote_app:${build_number} ."
+                    withCredentials([usernamePassword(credentialsId: 'docker_id', passwordVariable: 'docker_password', usernameVariable: 'docker_user_name')]) {
+                        sh "docker login -u $docker_user_name  -p $docker_password"
+                        sh "docker push ajmaldocker07/vote_app:${build_number}"
+                        sh "docker rmi ajmaldocker07/vote_app:${build_number}"
+                    }
+                }
+            }
+            
+        }
+
+        
+        stage("sed in helm") {
+            
+            steps {
+                
+                dir("../voting-app-helm") {
+                    sh "git pull origin main"
+                }
+                
+                dir("../") {
+                    sh """
+                      sed -i  "18 s/version: [^ ]*/version: ${build_number}/" ./voting-app-helm/helmchart/Chart.yaml
+                      sed -i  "s/tag: [^ ]*/tag: ${build_number}/" ./voting-app-helm/helmchart/values.yaml
+                      """
+                }
+            }
+        }
+        
+        
+        
+        stage("change github helm chart") {
+            steps {
+                dir("../voting-app-helm") {
+                    withCredentials([usernamePassword(credentialsId: 'helmchart-git', passwordVariable: 'password', usernameVariable: 'username')]) {
+                        sh """
+                            git add .
+                            git commit -m 'jenkins build ${build_number} ' 
+                            git push https://${username}:${password}@github.com/Ajmal-MP/voting-app-helm.git
+                          """
+                        
+                    }
+                }
+            }
+        }
+
+    }
+    post {
+	       always {
+		       sh 'docker logout'
+	       }
+    }    
+}
