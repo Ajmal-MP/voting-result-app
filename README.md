@@ -14,4 +14,7 @@ Continuous integration using jenkins and Continuous delivery to k8s cluster usin
 
 <img src="images/workflow.png">
 
+##  Kiali service 
+
+<img src="images/kialli.png">
 
