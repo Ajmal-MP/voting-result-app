@@ -12,5 +12,6 @@
 
 Continuous integration using jenkins and Continuous delivery to k8s cluster using ArgoCD
 
+<img src="images/workflow.png">
 
 
