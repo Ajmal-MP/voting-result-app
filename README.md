@@ -8,3 +8,9 @@
 
 <img src="images/voting-app-pods.png">
 
+## CI/CD
+
+Continuous integration using jenkins and Continuous delivery to k8s cluster using ArgoCD
+
+
+
